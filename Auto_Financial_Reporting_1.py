@@ -14,35 +14,36 @@ copy_ws = copy_wb['Sheet1']
 paste_ws = paste_wb['Sheet1']
 
 
-def copy_paste_cell(copy_ws, paste_ws, copy_loc, paste_loc):
-    """ Hardcoded Copy & Paste -- 'B2' -> 'B2' in other WS """
-    paste_ws[paste_loc].value = copy_ws[copy_loc].value
-
-
-def copy_paste_range(copy_ws, paste_ws, copy_range, paste_range):
-    """ Hardcoded Copy & Paste -- "B2:B4" -> "B2:B4" in other WS """
-    for copy_row, paste_row in zip(copy_ws[copy_range], paste_ws[paste_range]):
-        for copy_cell, paste_cell in zip(copy_row, paste_row):
-            paste_cell.value = copy_cell.value
-
+def copy_paste(copy_ws, paste_ws, copy_range, paste_range):
+    """ Check if operation is for single cell or multiple cell.
+    Run Copy & Paste to cell/s in other sheet accordingly """
+    if ":" in copy_range:
+        # 2D Matrix Copy & Paste - "B2:D4" -> "B2:D4" in other WS
+        for copy_row, paste_row in zip(copy_ws[copy_range], paste_ws[paste_range]):
+            for copy_cell, paste_cell in zip(copy_row, paste_row):
+                paste_cell.value = copy_cell.value
+    else:
+        # Single Cell Copy & Paste - 'B2' -> 'B2' in other WS
+        paste_ws[paste_loc].value = copy_ws[copy_loc].value
 
 # ----- Test -----
 test_wb = Workbook()
 
-# copy_paste_cell()
+# copy_paste()  --  Single Cell input
 test_ws = test_wb.create_sheet()
 copy_loc, paste_loc = "B2", "C2"
-copy_paste_cell(copy_ws, test_ws, copy_loc, paste_loc)
+copy_paste(copy_ws, test_ws, copy_loc, paste_loc)
 assert test_ws[paste_loc].value == copy_ws[copy_loc].value
 
-
-# copy_paste_range()
+# copy_paste()  --  Multi-Cell input
 test_ws = test_wb.create_sheet()
-copy_range, paste_range = "B2:B4", "B2:B4"
-copy_paste_range(copy_ws, test_ws, copy_range, paste_range)
+copy_range, paste_range = "B2:D4", "C2:E4"
+copy_paste(copy_ws, test_ws, copy_range, paste_range)
 for copy_row, paste_row in zip(copy_ws[copy_range], test_ws[paste_range]):
     for copy_cell, paste_cell in zip(copy_row, paste_row):
         assert paste_cell.value == copy_cell.value
+
+
 
 # Check if XL format of reports are still the same (ex: no extra column item)
 col_items = ['Fundraising', 'G&A', 'Programs', 'Arconic Grant', 'Disaster Relief (Restricted Fd)', 'Total Programs',
