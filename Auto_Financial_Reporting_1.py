@@ -18,17 +18,20 @@ def copy_paste_cell(copy_ws, paste_ws, copy_loc, paste_loc):
     """ Hardcoded Copy & Paste -- 'B2' -> 'B2' in other WS """
     paste_ws[paste_loc].value = copy_ws[copy_loc].value
 
+
 def copy_paste_range(copy_ws, paste_ws, copy_range, paste_range):
     """ Hardcoded Copy & Paste -- "B2:B4" -> "B2:B4" in other WS """
-    paste_ws["B2"].value = copy_ws["B2"].value
+    for copy_row, paste_row in zip(copy_ws[copy_range], paste_ws[paste_range]):
+        for copy_cell, paste_cell in zip(copy_row, paste_row):
+            paste_cell.value = copy_cell.value
+
 
 # ----- Test -----
 test_wb = Workbook()
 
 # copy_paste_cell()
 test_ws = test_wb.create_sheet()
-copy_loc, paste_loc = "B2", "B2"
-assert test_ws[paste_loc].value != copy_ws[copy_loc].value
+copy_loc, paste_loc = "B2", "C2"
 copy_paste_cell(copy_ws, test_ws, copy_loc, paste_loc)
 assert test_ws[paste_loc].value == copy_ws[copy_loc].value
 
@@ -36,31 +39,10 @@ assert test_ws[paste_loc].value == copy_ws[copy_loc].value
 # copy_paste_range()
 test_ws = test_wb.create_sheet()
 copy_range, paste_range = "B2:B4", "B2:B4"
-# for row in range(3):
-#     print(paste_ws.cell(row=row+2, column=2).value)
-#     print(copy_ws.cell(row=row+2, column=2).value)
-    # assert paste_ws.cell(row=row+2, column=2).value != copy_ws.cell(row=row+2, column=2).value
-# copy_paste_range(copy_loc, paste_loc)
-# for row in range(3):
-#     assert paste_ws.cell(row=row+1, column=1).value == copy_ws.cell(row=row+1, column=1).value
-
-
-
-def clear_cells(ws, loc):
-    """ Clear specified cell range of a ws """
-    for row in ws[loc]:
-        for cell in row:
-            cell.value = None
-
-# TEST clear_cells()
-test_paste_ws = test_wb.create_sheet()
-for row in test_paste_ws["A1:C3"]:
-    for cell in row:
-        cell.value = "1"
-assert test_paste_ws["A1:C3"] != None
-
-
-
+copy_paste_range(copy_ws, test_ws, copy_range, paste_range)
+for copy_row, paste_row in zip(copy_ws[copy_range], test_ws[paste_range]):
+    for copy_cell, paste_cell in zip(copy_row, paste_row):
+        assert paste_cell.value == copy_cell.value
 
 # Check if XL format of reports are still the same (ex: no extra column item)
 col_items = ['Fundraising', 'G&A', 'Programs', 'Arconic Grant', 'Disaster Relief (Restricted Fd)', 'Total Programs',
