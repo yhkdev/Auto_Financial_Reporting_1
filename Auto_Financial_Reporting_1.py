@@ -3,6 +3,8 @@ import openpyxl
 from openpyxl import Workbook
 from openpyxl.utils import column_index_from_string as get_col_idx
 
+from Rule import Rule
+
 # os.chdir(os.getcwd() + r"\test excel files")  # Change working directory to folder with the excel files
 os.chdir(os.getcwd() + "/local_test")  # Change working directory to folder with the excel files
 
@@ -14,33 +16,37 @@ copy_ws = copy_wb['Sheet1']
 paste_ws = paste_wb['Sheet1']
 
 
-def _copy_paste(copy_ws, paste_ws, copy_range, paste_range):
-    """ Copy & Paste single cell or multiple cells of values to another sheet
 
+def _copy_paste(copy_ws, paste_ws, copyfrom, pasteto):
+    """ Copy & Paste single cell or multiple cells of values to another sheet
     :param copy_ws: Worksheet (NOT Workbook) to copy from
     :param paste_ws: Worksheet (NOT Workbook) to paste to
-    :param copy_range: range (ex: "B2" or "B2:D4") to copy from
-    :param paste_range: range to paste to
+    :param copyfrom: range (ex: "B2" or "B2:D4") to copy from
+    :param pasteto: range to paste to
     """
 
-    if ":" in copy_range:
+    if ":" in copyfrom:
         # 2D Matrix Copy & Paste - "B2:D4" -> "C2:E4" in other WS
-        for copy_row, paste_row in zip(copy_ws[copy_range], paste_ws[paste_range]):
+        for copy_row, paste_row in zip(copy_ws[copyfrom], paste_ws[pasteto]):
             for copy_cell, paste_cell in zip(copy_row, paste_row):
                 paste_cell.value = copy_cell.value
     else:
         # Single Cell Copy & Paste - 'B2' -> 'B2' in other WS
-        paste_ws[paste_range].value = copy_ws[copy_range].value
+        paste_ws[pasteto].value = copy_ws[copyfrom].value
 
-def copy_paste(copy_ws, paste_ws, copy_paste_dict):
-    """ Run _copy_paste() on range of copy/paste range in given dictionary
+def copy_paste(copy_ws, paste_ws, entries):
+    """ _copy_paste() on copy/paste range in given dictionary
     :param copy_paste_dict: Dictionary of {copy_range : paste_range}
     """
-    for copy_range, paste_range in copy_paste_dict.items():
-        _copy_paste(copy_ws, paste_ws, copy_range, paste_range)
+    for copyfrom, pasteto in entries:
+        _copy_paste(copy_ws, paste_ws, copyfrom, pasteto)
+
+
 
 # ----- Test -----
 test_wb = Workbook()
+rule = Rule("Rule Name", "Rule Description")
+
 
 def test_copy_paste(copy_ws, test_ws, copy_range, paste_range):
     """ Test function for copy_paste() and _copy_paste()"""
@@ -50,6 +56,7 @@ def test_copy_paste(copy_ws, test_ws, copy_range, paste_range):
                 assert paste_cell.value == copy_cell.value
     else:
         assert test_ws[paste_range].value == copy_ws[copy_range].value
+
 
 # _copy_paste()  --  Single Cell input
 test_ws = test_wb.create_sheet()
@@ -65,11 +72,19 @@ test_copy_paste(copy_ws, test_ws, copy_range, paste_range)
 
 # copy_paste()  --  both Single cell & Multi-Cell input
 test_ws = test_wb.create_sheet()
-copy_paste_dict = {"B2": "B2", "B3": "B4", "C2:C4": "D2:D4"}
-copy_paste(copy_ws, test_ws, copy_paste_dict)
-for copy_range, paste_range in copy_paste_dict.items():
+entries = [["B2", "B2"], ["B3", "B4"], ["C2:C4", "D2:D4"]]
+copy_paste(copy_ws, test_ws, entries)
+for copy_range, paste_range in entries:
     test_copy_paste(copy_ws, test_ws, copy_range, paste_range)
 
+# # add_entry() & remove_entry() & edit_entry
+test_ws = test_wb.create_sheet()
+entries = []
+add_entry("B2", "B2", entries)
+add_entry("C2:C4", "D2:D4", entries)
+copy_paste(copy_ws, test_ws, entries)
+for copy_range, paste_range in entries:
+    test_copy_paste(copy_ws, test_ws, copy_range, paste_range)
 
 
 
