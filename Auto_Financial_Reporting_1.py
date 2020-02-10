@@ -14,34 +14,62 @@ copy_ws = copy_wb['Sheet1']
 paste_ws = paste_wb['Sheet1']
 
 
-def copy_paste(copy_ws, paste_ws, copy_range, paste_range):
-    """ Check if operation is for single cell or multiple cell.
-    Run Copy & Paste to cell/s in other sheet accordingly """
+def _copy_paste(copy_ws, paste_ws, copy_range, paste_range):
+    """ Copy & Paste single cell or multiple cells of values to another sheet
+
+    :param copy_ws: Worksheet (NOT Workbook) to copy from
+    :param paste_ws: Worksheet (NOT Workbook) to paste to
+    :param copy_range: range (ex: "B2" or "B2:D4") to copy from
+    :param paste_range: range to paste to
+    """
+
     if ":" in copy_range:
-        # 2D Matrix Copy & Paste - "B2:D4" -> "B2:D4" in other WS
+        # 2D Matrix Copy & Paste - "B2:D4" -> "C2:E4" in other WS
         for copy_row, paste_row in zip(copy_ws[copy_range], paste_ws[paste_range]):
             for copy_cell, paste_cell in zip(copy_row, paste_row):
                 paste_cell.value = copy_cell.value
     else:
         # Single Cell Copy & Paste - 'B2' -> 'B2' in other WS
-        paste_ws[paste_loc].value = copy_ws[copy_loc].value
+        paste_ws[paste_range].value = copy_ws[copy_range].value
+
+def copy_paste(copy_ws, paste_ws, copy_paste_dict):
+    """ Run _copy_paste() on range of copy/paste range in given dictionary
+    :param copy_paste_dict: Dictionary of {copy_range : paste_range}
+    """
+    for copy_range, paste_range in copy_paste_dict.items():
+        _copy_paste(copy_ws, paste_ws, copy_range, paste_range)
 
 # ----- Test -----
 test_wb = Workbook()
 
-# copy_paste()  --  Single Cell input
+def test_copy_paste(copy_ws, test_ws, copy_range, paste_range):
+    """ Test function for copy_paste() and _copy_paste()"""
+    if ":" in copy_range:
+        for copy_row, paste_row in zip(copy_ws[copy_range], test_ws[paste_range]):
+            for copy_cell, paste_cell in zip(copy_row, paste_row):
+                assert paste_cell.value == copy_cell.value
+    else:
+        assert test_ws[paste_range].value == copy_ws[copy_range].value
+
+# _copy_paste()  --  Single Cell input
 test_ws = test_wb.create_sheet()
 copy_loc, paste_loc = "B2", "C2"
-copy_paste(copy_ws, test_ws, copy_loc, paste_loc)
-assert test_ws[paste_loc].value == copy_ws[copy_loc].value
+_copy_paste(copy_ws, test_ws, copy_loc, paste_loc)
+test_copy_paste(copy_ws, test_ws, copy_loc, paste_loc)
 
-# copy_paste()  --  Multi-Cell input
+# _copy_paste()  --  Multi-Cell input
 test_ws = test_wb.create_sheet()
 copy_range, paste_range = "B2:D4", "C2:E4"
-copy_paste(copy_ws, test_ws, copy_range, paste_range)
-for copy_row, paste_row in zip(copy_ws[copy_range], test_ws[paste_range]):
-    for copy_cell, paste_cell in zip(copy_row, paste_row):
-        assert paste_cell.value == copy_cell.value
+_copy_paste(copy_ws, test_ws, copy_range, paste_range)
+test_copy_paste(copy_ws, test_ws, copy_range, paste_range)
+
+# copy_paste()  --  both Single cell & Multi-Cell input
+test_ws = test_wb.create_sheet()
+copy_paste_dict = {"B2": "B2", "B3": "B4", "C2:C4": "D2:D4"}
+copy_paste(copy_ws, test_ws, copy_paste_dict)
+for copy_range, paste_range in copy_paste_dict.items():
+    test_copy_paste(copy_ws, test_ws, copy_range, paste_range)
+
 
 
 
