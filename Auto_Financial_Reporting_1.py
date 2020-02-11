@@ -5,15 +5,11 @@ from openpyxl.utils import column_index_from_string as get_col_idx
 
 from Rule import Rule
 
-# os.chdir(os.getcwd() + r"\test excel files")  # Change working directory to folder with the excel files
-os.chdir(os.getcwd() + "/local_test")  # Change working directory to folder with the excel files
 
 # Set up - Import files (Identify main XL and 3 other XL to copy from)
-copy_wb = openpyxl.load_workbook(filename='CopyFrom.xlsx', data_only=True)
-paste_wb = openpyxl.load_workbook(filename='PasteTo.xlsx', data_only=True)  # 'data_only' makes sure you only get data, Not formula in the cells
 
-copy_ws = copy_wb['Sheet1']
-paste_ws = paste_wb['Sheet1']
+# paste_wb = openpyxl.load_workbook(filename='PasteTo.xlsx', data_only=True)  # 'data_only' makes sure you only get data, Not formula in the cells
+# paste_ws = paste_wb['Sheet1']
 
 
 
@@ -45,6 +41,9 @@ def copy_paste(copy_ws, paste_ws, entries):
 
 # ----- Test -----
 test_wb = Workbook()
+os.chdir(os.getcwd() + "/local_test")  # Change working directory to folder with the excel files
+copy_wb = openpyxl.load_workbook(filename='CopyFrom.xlsx', data_only=True)
+copy_ws = copy_wb['Sheet1']
 
 def test_copy_paste(copy_ws, test_ws, copy_range, paste_range):
     """ Test function for copy_paste() and _copy_paste()"""

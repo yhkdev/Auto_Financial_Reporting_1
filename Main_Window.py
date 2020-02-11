@@ -20,7 +20,6 @@ class FileEdit(QLineEdit):
     """ Custom Subclass of QLineEdit tp allow users to drag & drop for file selection (instead of browsing) """
     def __init__(self, parent):
         super(FileEdit, self).__init__(parent)
-
         self.setDragEnabled(True)
 
     def dragEnterEvent(self, event):
@@ -41,7 +40,6 @@ class FileEdit(QLineEdit):
         if urls and urls[0].scheme() == 'file':
             filepath = str(urls[0].path())[1:]
             # any file type here
-
             self.setText(filepath)
 
 
@@ -113,12 +111,12 @@ class Ui_MainWindow(QMainWindow):
         self.Button_browse_copyfrom = QtWidgets.QPushButton(self.file_import_frame)
         self.Button_browse_copyfrom.setGeometry(QtCore.QRect(410, 10, 91, 41))
         self.Button_browse_copyfrom.setObjectName("Button_browse_copyfrom")
-        self.Button_browse_copyfrom.clicked.connect(self.open_copy_excel_file)  # Added by me (browse func for copy file)
+        self.Button_browse_copyfrom.clicked.connect(lambda: self.open_excel_file(self.textEdit_copyfrom))  # Added by me (browse func for copy file)
 
         self.Button_browse_destination = QtWidgets.QPushButton(self.file_import_frame)
         self.Button_browse_destination.setGeometry(QtCore.QRect(410, 50, 91, 41))
         self.Button_browse_destination.setObjectName("Button_browse_destination")
-        self.Button_browse_destination.clicked.connect(self.open_destination_excel_file)  # Added by me (browse func for destination file)
+        self.Button_browse_destination.clicked.connect(lambda: self.open_excel_file(self.textEdit_destination))  # Added by me (browse func for destination file)
 
         self.textEdit_copyfrom = FileEdit(self.file_import_frame)
         self.textEdit_copyfrom.setGeometry(QtCore.QRect(90, 20, 319, 21))
@@ -166,27 +164,19 @@ class Ui_MainWindow(QMainWindow):
         self.label_select_excel_files.setText(_translate("MainWindow", "Select  Excel  Files"))
 
 
-    def open_copy_excel_file(self):
-        fname = QFileDialog.getOpenFileName(self, "Open copy file")
+    def open_excel_file(self, textEdit):
+        """ open file browser and get path to designated copy or destination file """
+        fname = QFileDialog.getOpenFileName(self, "Open file")
 
         if fname[0]:
             file = open(fname[0], 'r')
 
             with file:
                 text = file.name  # << Saves file PATH to textEdit next to it
-                self.textEdit_copyfrom.setText(text)
+                textEdit.setText(text)
 
-    def open_destination_excel_file(self):
-        fname = QFileDialog.getOpenFileName(self, "Open destination file")
-
-        if fname[0]:
-            file = open(fname[0], 'r')
-
-            with file:
-                text = file.name  # << Saves file PATH to textEdit next to it
-                self.textEdit_destination.setText(text)
-
-
+    def run(self):
+        """ Run the program """
 
 
 if __name__ == "__main__":
