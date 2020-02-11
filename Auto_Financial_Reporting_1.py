@@ -45,8 +45,6 @@ def copy_paste(copy_ws, paste_ws, entries):
 
 # ----- Test -----
 test_wb = Workbook()
-rule = Rule("Rule Name", "Rule Description")
-
 
 def test_copy_paste(copy_ws, test_ws, copy_range, paste_range):
     """ Test function for copy_paste() and _copy_paste()"""
@@ -77,13 +75,13 @@ copy_paste(copy_ws, test_ws, entries)
 for copy_range, paste_range in entries:
     test_copy_paste(copy_ws, test_ws, copy_range, paste_range)
 
-# # add_entry() & remove_entry() & edit_entry
+# Rule class integration
 test_ws = test_wb.create_sheet()
-entries = []
-add_entry("B2", "B2", entries)
-add_entry("C2:C4", "D2:D4", entries)
-copy_paste(copy_ws, test_ws, entries)
-for copy_range, paste_range in entries:
+rule = Rule("Rule Name", "Rule Description")
+rule.add_entry("B2", "B2")
+rule.add_entry("C2:C4", "D2:D4")
+copy_paste(copy_ws, test_ws, rule.entries)
+for copy_range, paste_range in rule.entries:
     test_copy_paste(copy_ws, test_ws, copy_range, paste_range)
 
 
