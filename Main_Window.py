@@ -10,7 +10,8 @@ from PyQt5 import QtCore, QtGui, QtWidgets
 from PyQt5.QtWidgets import QFileDialog, QMainWindow, QMessageBox, QLineEdit
 from PyQt5.QtGui import QIcon
 
-import sys
+from CopyPasteExcel import copy_paste
+
 import os
 
 
@@ -42,6 +43,18 @@ class FileEdit(QLineEdit):
             # any file type here
             self.setText(filepath)
 
+
+            # BELOW IS CODE FROM: https://www.reddit.com/r/learnpython/comments/97z5dq/pyqt5_drag_and_drop_file_option/e4cv39x/
+            # WHEN YOU HAVE TIME, REFACTOR ABOVE CODE WITH REGEX TO ONLY OPEN EXCEL FILES (anything ending with .xl...)
+
+            # if filepath[-4:].upper() in [".txt", ".x"]:
+            #     self.setText(filepath)
+            # else:
+            #     dialog = QMessageBox()
+            #     dialog.setWindowTitle("Error: Invalid File")
+            #     dialog.setText("Only Excel files are accepted")
+            #     dialog.setIcon(QMessageBox.Warning)
+            #     dialog.exec_()
 
 
 class Ui_MainWindow(QMainWindow):
@@ -86,13 +99,14 @@ class Ui_MainWindow(QMainWindow):
         self.line.setObjectName("line")
 
         self.Label_rules = QtWidgets.QLabel(self.centralwidget)
-        self.Label_rules.setGeometry(QtCore.QRect(170, 230, 60, 16))
+        self.Label_rules.setGeometry(QtCore.QRect(135, 230, 120, 16))
         self.Label_rules.setAlignment(QtCore.Qt.AlignCenter)
         self.Label_rules.setObjectName("Label_rules")
 
         self.Button_Run = QtWidgets.QPushButton(self.centralwidget)
         self.Button_Run.setGeometry(QtCore.QRect(120, 410, 311, 51))
         self.Button_Run.setObjectName("Button_Run")
+        self.Button_Run.clicked.connect(self.run)
 
         self.file_import_frame = QtWidgets.QFrame(self.centralwidget)
         self.file_import_frame.setGeometry(QtCore.QRect(20, 100, 511, 100))
@@ -155,7 +169,7 @@ class Ui_MainWindow(QMainWindow):
         self.Button_edit_rule.setText(_translate("MainWindow", "Edit"))
         self.Button_remove_rule.setText(_translate("MainWindow", "Remove"))
         self.listWidget_rules.setSortingEnabled(False)
-        self.Label_rules.setText(_translate("MainWindow", "Rules"))
+        self.Label_rules.setText(_translate("MainWindow", "Copy/Paste Macros"))
         self.Button_Run.setText(_translate("MainWindow", "RUN"))
         self.Label_copyfrom.setText(_translate("MainWindow", "Copy From:"))
         self.Label_destination.setText(_translate("MainWindow", "Destination:"))
@@ -176,7 +190,12 @@ class Ui_MainWindow(QMainWindow):
                 textEdit.setText(text)
 
     def run(self):
-        """ Run the program """
+        """  """
+        copy_wb_path = self.textEdit_copyfrom.text()
+        destination_wb_path = self.textEdit_destination
+        rule = [["B2", "B2"], ["C2:C4", "D2:D4"]]  # TEST rule
+        pass
+
 
 
 if __name__ == "__main__":
