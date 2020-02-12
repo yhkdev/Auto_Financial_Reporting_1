@@ -40,8 +40,9 @@ class Ui_Macro_Dialog(QDialog):
 
         self.tableWidget_sheets = QtWidgets.QTableWidget(Macro_Dialog)
         self.tableWidget_sheets.setGeometry(QtCore.QRect(45, 240, 218, 320))
-        self.tableWidget_sheets.setDragEnabled(True)
-        self.tableWidget_sheets.setDragDropMode(QtWidgets.QAbstractItemView.DragDrop)
+        # self.tableWidget_sheets.setDragEnabled(True)
+        # self.tableWidget_sheets.setDragDropMode(QtWidgets.QAbstractItemView.DragDrop)
+        self.tableWidget_sheets.setEditTriggers(QtWidgets.QAbstractItemView.DoubleClicked | QtWidgets.QAbstractItemView.AnyKeyPressed)
         self.tableWidget_sheets.setColumnCount(2)
         self.tableWidget_sheets.setObjectName("tableWidget_sheets")
         self.tableWidget_sheets.setRowCount(0)  # << Set to 0 myself. Use commented code later if needed
@@ -56,19 +57,20 @@ class Ui_Macro_Dialog(QDialog):
         # item = QtWidgets.QTableWidgetItem()
         # self.tableWidget_sheets.setItem(0, 1, item)
 
-        self.tableWidget_cell_entries = QtWidgets.QTableWidget(Macro_Dialog)
-        self.tableWidget_cell_entries.setGeometry(QtCore.QRect(345, 240, 218, 320))
-        self.tableWidget_cell_entries.setDragEnabled(True)
-        self.tableWidget_cell_entries.setDragDropMode(QtWidgets.QAbstractItemView.DragDrop)
-        self.tableWidget_cell_entries.setObjectName("tableWidget_cell_entries")
-        self.tableWidget_cell_entries.setColumnCount(2)
-        self.tableWidget_cell_entries.setRowCount(0)  # << Set to 0 myself. Use commented code later if needed
+        self.tableWidget_cells = QtWidgets.QTableWidget(Macro_Dialog)
+        self.tableWidget_cells.setGeometry(QtCore.QRect(345, 240, 218, 320))
+        # self.tableWidget_cells.setDragEnabled(True)
+        # self.tableWidget_cells.setDragDropMode(QtWidgets.QAbstractItemView.DragDrop)
+        self.tableWidget_cells.setEditTriggers(QtWidgets.QAbstractItemView.DoubleClicked | QtWidgets.QAbstractItemView.AnyKeyPressed)
+        self.tableWidget_cells.setObjectName("tableWidget_cell_entries")
+        self.tableWidget_cells.setColumnCount(2)
+        self.tableWidget_cells.setRowCount(0)  # << Set to 0 myself. Use commented code later if needed
         # item = QtWidgets.QTableWidgetItem()
         # self.tableWidget_cell_entries.setVerticalHeaderItem(0, item)
         item = QtWidgets.QTableWidgetItem()
-        self.tableWidget_cell_entries.setHorizontalHeaderItem(0, item)
+        self.tableWidget_cells.setHorizontalHeaderItem(0, item)
         item = QtWidgets.QTableWidgetItem()
-        self.tableWidget_cell_entries.setHorizontalHeaderItem(1, item)
+        self.tableWidget_cells.setHorizontalHeaderItem(1, item)
         # item = QtWidgets.QTableWidgetItem()
         # self.tableWidget_cell_entries.setItem(0, 0, item)
         # item = QtWidgets.QTableWidgetItem()
@@ -78,26 +80,34 @@ class Ui_Macro_Dialog(QDialog):
         self.Button_del_sheets.setGeometry(QtCore.QRect(90, 570, 50, 30))
         self.Button_del_sheets.setAutoDefault(False)
         self.Button_del_sheets.setObjectName("Button_del_sheets")
+        self.Button_del_sheets.clicked.connect(lambda: self.remove_row(self.tableWidget_sheets))
+
 
         self.Button_add_sheets = QtWidgets.QPushButton(Macro_Dialog)
         self.Button_add_sheets.setGeometry(QtCore.QRect(170, 570, 50, 30))
         self.Button_add_sheets.setAutoDefault(False)
         self.Button_add_sheets.setObjectName("Button_add_sheets")
+        self.Button_add_sheets.clicked.connect(lambda: self.add_row(self.tableWidget_sheets))  # << Add entry to sheet table
 
         self.Button_del_cell_entries = QtWidgets.QPushButton(Macro_Dialog)
         self.Button_del_cell_entries.setGeometry(QtCore.QRect(390, 570, 50, 30))
         self.Button_del_cell_entries.setAutoDefault(False)
         self.Button_del_cell_entries.setObjectName("Button_del_cell_entries")
+        self.Button_del_cell_entries.clicked.connect(lambda: self.remove_row(self.tableWidget_cells))
 
         self.Button_add_cell_entries = QtWidgets.QPushButton(Macro_Dialog)
         self.Button_add_cell_entries.setGeometry(QtCore.QRect(470, 570, 50, 30))
         self.Button_add_cell_entries.setAutoDefault(False)
         self.Button_add_cell_entries.setObjectName("Button_add_cell_entries")
+        self.Button_add_cell_entries.clicked.connect(lambda: self.add_row(self.tableWidget_cells))  # << Add entry to cell entry table
+
 
         self.Button_cancel = QtWidgets.QPushButton(Macro_Dialog)
         self.Button_cancel.setGeometry(QtCore.QRect(190, 630, 100, 30))
         self.Button_cancel.setAutoDefault(False)
         self.Button_cancel.setObjectName("Button_cancel")
+        self.Button_cancel.clicked.connect(self.close_app)  # << Exit Dialog
+
 
         self.Button_save = QtWidgets.QPushButton(Macro_Dialog)
         self.Button_save.setGeometry(QtCore.QRect(310, 630, 100, 30))
@@ -130,15 +140,48 @@ class Ui_Macro_Dialog(QDialog):
         self.tableWidget_sheets.setSortingEnabled(__sortingEnabled)
 
         # Cell Entries Table
-        item = self.tableWidget_cell_entries.horizontalHeaderItem(0)
+        item = self.tableWidget_cells.horizontalHeaderItem(0)
         item.setText(_translate("Macro_Object", "Copy from:"))
-        item = self.tableWidget_cell_entries.horizontalHeaderItem(1)
+        item = self.tableWidget_cells.horizontalHeaderItem(1)
         item.setText(_translate("Macro_Object", "Paste to:"))
-        __sortingEnabled = self.tableWidget_cell_entries.isSortingEnabled()
-        self.tableWidget_cell_entries.setSortingEnabled(False)
-        self.tableWidget_cell_entries.setSortingEnabled(__sortingEnabled)
+        __sortingEnabled = self.tableWidget_cells.isSortingEnabled()
+        self.tableWidget_cells.setSortingEnabled(False)
+        self.tableWidget_cells.setSortingEnabled(__sortingEnabled)
+
+    def add_row(self, TableWidget):
+        rowPosition = TableWidget.rowCount()
+        TableWidget.insertRow(rowPosition)
+
+    def remove_row(self, TableWidget):
+        # Note: Edit, if possible, to allow row deletion by clicking on a cell, not the entire row
+
+        if TableWidget.selectionModel().selectedRows():  # TableWidget.selectionModel().hasSelection() << use when editting to allow row deletion by clicking on a cell, not entire row
+
+            reply = QMessageBox.warning(self, "Remove Entry", "Remove selected rows?", QMessageBox.Yes | QMessageBox.No)
+
+            if reply == QMessageBox.Yes:
+
+                index_list = []
+                for model_index in TableWidget.selectionModel().selectedRows():
+                    index = QtCore.QPersistentModelIndex(model_index)
+                    index_list.append(index)
+
+                for index in index_list:
+                    TableWidget.removeRow(index.row())
 
 
+        #
+        # if item:
+        #     reply = QMessageBox.warning(self, "Remove Entry",
+        #                                  "Remove Entry '{0}'?".format(str(item.text())),  # <<<
+        #                                  QMessageBox.Yes | QMessageBox.No)
+        #
+        #     if reply == QMessageBox.Yes:
+        #         item = TableWidget.takeItem(row) # <<<
+        #         del item
+
+    def close_app(self):
+        Macro_Dialog.close()
 
 if __name__ == "__main__":
     import sys
