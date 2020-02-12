@@ -7,7 +7,7 @@
 # WARNING! All changes made in this file will be lost!
 
 from PyQt5 import QtCore, QtGui, QtWidgets
-from PyQt5.QtWidgets import QFileDialog, QMainWindow, QMessageBox, QLineEdit
+from PyQt5.QtWidgets import QMainWindow, QFileDialog, QInputDialog, QMessageBox, QLineEdit
 from PyQt5.QtGui import QIcon
 
 from CopyPasteExcel import copy_paste
@@ -58,12 +58,13 @@ class FileEdit(QLineEdit):
 
 
 class Ui_MainWindow(QMainWindow):
-    def __init__(self):
+    def __init__(self, name=None, proList=None):
         super(Ui_MainWindow, self).__init__()
         self.initUI(MainWindow)
 
 
-    def initUI(self, MainWindow):
+    def initUI(self, MainWindow, name=None, proList=None):
+
         MainWindow.setObjectName("MainWindow")
         MainWindow.resize(550, 500)
         self.centralwidget = QtWidgets.QWidget(MainWindow)
@@ -77,20 +78,29 @@ class Ui_MainWindow(QMainWindow):
         self.verticalLayout.setContentsMargins(0, 0, 0, 0)
         self.verticalLayout.setObjectName("verticalLayout")
 
-        self.Button_new_rule = QtWidgets.QPushButton(self.verticalLayoutWidget)
-        self.Button_new_rule.setObjectName("Button_new_rule")
-        self.verticalLayout.addWidget(self.Button_new_rule)
-        self.Button_edit_rule = QtWidgets.QPushButton(self.verticalLayoutWidget)
-        self.Button_edit_rule.setObjectName("Button_edit_rule")
+        self.Button_new_macro = QtWidgets.QPushButton(self.verticalLayoutWidget)
+        self.Button_new_macro.setObjectName("Button_new_macro")
+        self.verticalLayout.addWidget(self.Button_new_macro)
+        self.Button_new_macro.clicked.connect(self.create_new_macro)    # Create new entry in macro list
 
-        self.verticalLayout.addWidget(self.Button_edit_rule)
-        self.Button_remove_rule = QtWidgets.QPushButton(self.verticalLayoutWidget)
-        self.Button_remove_rule.setObjectName("Button_remove_rule")
+        self.Button_edit_macro = QtWidgets.QPushButton(self.verticalLayoutWidget)
+        self.Button_edit_macro.setObjectName("Button_edit_macro")
+        self.verticalLayout.addWidget(self.Button_edit_macro)
+        self.Button_edit_macro.clicked.connect(self.edit_macro)    # Edit selected entry in macro list
 
-        self.verticalLayout.addWidget(self.Button_remove_rule)
-        self.listWidget_rules = QtWidgets.QListWidget(self.centralwidget)
-        self.listWidget_rules.setGeometry(QtCore.QRect(20, 250, 350, 150))
-        self.listWidget_rules.setObjectName("listWidget_rules")
+        self.Button_remove_macro = QtWidgets.QPushButton(self.verticalLayoutWidget)
+        self.Button_remove_macro.setObjectName("Button_remove_macro")
+        self.verticalLayout.addWidget(self.Button_remove_macro)
+        self.Button_remove_macro.clicked.connect(self.remove_macro)    # Remove selected entry in macro list
+
+        self.listWidget_macros = QtWidgets.QListWidget(self.centralwidget)
+        self.listWidget_macros.setGeometry(QtCore.QRect(20, 250, 350, 150))
+        self.listWidget_macros.setObjectName("listWidget_macros")
+
+        self.name = name
+        if proList is not None:
+            self.listWidget_macros.addItem(proList)
+            self.listWidget_macros.setCurrentRow(0)
 
         self.line = QtWidgets.QFrame(self.centralwidget)
         self.line.setGeometry(QtCore.QRect(0, 220, 550, 5))
@@ -165,10 +175,10 @@ class Ui_MainWindow(QMainWindow):
     def retranslateUi(self, MainWindow):
         _translate = QtCore.QCoreApplication.translate
         MainWindow.setWindowTitle(_translate("MainWindow", "MainWindow"))
-        self.Button_new_rule.setText(_translate("MainWindow", "New"))
-        self.Button_edit_rule.setText(_translate("MainWindow", "Edit"))
-        self.Button_remove_rule.setText(_translate("MainWindow", "Remove"))
-        self.listWidget_rules.setSortingEnabled(False)
+        self.Button_new_macro.setText(_translate("MainWindow", "New"))
+        self.Button_edit_macro.setText(_translate("MainWindow", "Edit"))
+        self.Button_remove_macro.setText(_translate("MainWindow", "Remove"))
+        self.listWidget_macros.setSortingEnabled(False)
         self.Label_rules.setText(_translate("MainWindow", "Copy/Paste Macros"))
         self.Button_Run.setText(_translate("MainWindow", "RUN"))
         self.Label_copyfrom.setText(_translate("MainWindow", "Copy From:"))
@@ -176,7 +186,6 @@ class Ui_MainWindow(QMainWindow):
         self.Button_browse_destination.setText(_translate("MainWindow", "Browse"))
         self.Button_browse_copyfrom.setText(_translate("MainWindow", "Browse"))
         self.label_select_excel_files.setText(_translate("MainWindow", "Select  Excel  Files"))
-
 
     def open_excel_file(self, textEdit):
         """ open file browser and get path to designated copy or destination file """
@@ -188,6 +197,48 @@ class Ui_MainWindow(QMainWindow):
             with file:
                 text = file.name  # << Saves file PATH to textEdit next to it
                 textEdit.setText(text)
+
+    def create_new_macro(self):
+        # self.listWidget_macros.addItem("Added new Macro")
+        row = self.listWidget_macros.currentRow()
+        title, label = "Add Macro", "Macro Name:"
+        text, ok = QInputDialog.getText(self, title, label)  # << Conventional syntax for QInputDialog.getText()
+        # 'QInputDialog.getText' -> (str, bool)
+        # 'text' is text I/O. 'ok' == True if user pressed "ok" button in the popup input dialog
+
+        if ok and text is not None:  # If user entered input and pressed ok:
+            self.listWidget_macros.insertItem(row, text)  # Add new item to table
+
+    def edit_macro(self):
+        row = self.listWidget_macros.currentRow()  # get currently selected row idx
+        item = self.listWidget_macros.item(row)  # Get row item at currently selected row
+
+        if item is not None:
+            title = "Edit Macro: '{0}'".format(str(item.text()))
+            text, ok = QInputDialog.getText(self, title, title,
+                                              QLineEdit.Normal, item.text())
+            if ok and text is not None:
+                item.setText(text)  # Edit
+
+    def remove_macro(self):
+        row = self.listWidget_macros.currentRow()
+        item = self.listWidget_macros.item(row)
+
+        if item:
+
+            reply = QMessageBox.warning(self, "Remove Macro?",
+                                         "Remove Macro '{0}'?".format(str(item.text())),
+                                         QMessageBox.Yes | QMessageBox.No)
+
+            if reply == QMessageBox.Yes:
+                item = self.listWidget_macros.takeItem(row)
+                del item
+
+    def sort(self):
+        self.listWidget_macros.sortItems()
+
+    def close(self):
+        self.close()
 
     def run(self):
         """  """
@@ -206,4 +257,7 @@ if __name__ == "__main__":
     ui.initUI(MainWindow)
     MainWindow.show()
     sys.exit(app.exec_())
+
+# ----------- TEST ----------
+
 
