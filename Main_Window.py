@@ -7,15 +7,17 @@
 # WARNING! All changes made in this file will be lost!
 
 from PyQt5 import QtCore, QtGui, QtWidgets
-from PyQt5.QtWidgets import QMainWindow, QFileDialog, QInputDialog, QMessageBox, QLineEdit
+from PyQt5.QtWidgets import QMainWindow, QFileDialog, QDialog, QInputDialog, QMessageBox, QLineEdit
 from PyQt5.QtGui import QIcon
 
+import sqlite3
+
 from CopyPasteExcel import copy_paste
+from Macros import Ui_Macro_Dialog
+from SqliteHelper import SqliteHelper
 
 import os
 
-
-excel_folder_path = "/local_test"
 
 class FileEdit(QLineEdit):
     """ Custom Subclass of QLineEdit tp allow users to drag & drop for file selection (instead of browsing) """
@@ -58,17 +60,65 @@ class FileEdit(QLineEdit):
 
 
 class Ui_MainWindow(QMainWindow):
-    def __init__(self, name=None, proList=None):
+    def __init__(self, proList=None):
         super(Ui_MainWindow, self).__init__()
         self.initUI(MainWindow)
 
 
-    def initUI(self, MainWindow, name=None, proList=None):
+    def initUI(self, MainWindow, proList=None):
+        sqlhelper = SqliteHelper("Macros_db")  # Create db/tables if it doesn't exist yet
+        sqlhelper.create_table()
 
         MainWindow.setObjectName("MainWindow")
         MainWindow.resize(550, 500)
         self.centralwidget = QtWidgets.QWidget(MainWindow)
         self.centralwidget.setObjectName("centralwidget")
+
+        self.label_select_excel_files = QtWidgets.QLabel(self.centralwidget)
+        self.label_select_excel_files.setGeometry(QtCore.QRect(210, 70, 131, 21))
+        font = QtGui.QFont()
+        font.setPointSize(14)
+        self.label_select_excel_files.setFont(font)
+        self.label_select_excel_files.setAlignment(QtCore.Qt.AlignCenter)
+        self.label_select_excel_files.setObjectName("label_select_excel_files")
+
+        self.Frame_fileimport = QtWidgets.QFrame(self.centralwidget)
+        self.Frame_fileimport.setGeometry(QtCore.QRect(20, 100, 511, 100))
+        self.Frame_fileimport.setFrameShape(QtWidgets.QFrame.StyledPanel)
+        self.Frame_fileimport.setFrameShadow(QtWidgets.QFrame.Raised)
+        self.Frame_fileimport.setObjectName("frame_fileimport")
+
+        self.Label_copyfrom = QtWidgets.QLabel(self.Frame_fileimport)
+        self.Label_copyfrom.setGeometry(QtCore.QRect(10, 10, 79, 35))
+        self.Label_copyfrom.setObjectName("Label_copyfrom")
+
+        self.Label_destination = QtWidgets.QLabel(self.Frame_fileimport)
+        self.Label_destination.setGeometry(QtCore.QRect(10, 50, 71, 31))
+        self.Label_destination.setObjectName("Label_destination")
+
+        self.textEdit_copyfrom = FileEdit(self.Frame_fileimport)
+        self.textEdit_copyfrom.setGeometry(QtCore.QRect(90, 20, 319, 21))
+        self.textEdit_copyfrom.setObjectName("textEdit_copyfrom")
+
+        self.textEdit_destination = FileEdit(self.Frame_fileimport)
+        self.textEdit_destination.setGeometry(QtCore.QRect(90, 60, 319, 21))
+        self.textEdit_destination.setObjectName("textEdit_destination")
+
+        self.Button_browse_copyfrom = QtWidgets.QPushButton(self.Frame_fileimport)
+        self.Button_browse_copyfrom.setGeometry(QtCore.QRect(410, 10, 91, 41))
+        self.Button_browse_copyfrom.setObjectName("Button_browse_copyfrom")
+        self.Button_browse_copyfrom.clicked.connect(lambda: self.open_excel_file(self.textEdit_copyfrom))  # Added by me (browse func for copy file)
+
+        self.Button_browse_destination = QtWidgets.QPushButton(self.Frame_fileimport)
+        self.Button_browse_destination.setGeometry(QtCore.QRect(410, 50, 91, 41))
+        self.Button_browse_destination.setObjectName("Button_browse_destination")
+        self.Button_browse_destination.clicked.connect(lambda: self.open_excel_file(self.textEdit_destination))  # Added by me (browse func for destination file)
+
+        self.line = QtWidgets.QFrame(self.centralwidget)
+        self.line.setGeometry(QtCore.QRect(0, 220, 550, 5))
+        self.line.setFrameShape(QtWidgets.QFrame.HLine)
+        self.line.setFrameShadow(QtWidgets.QFrame.Sunken)
+        self.line.setObjectName("line")
 
         self.verticalLayoutWidget = QtWidgets.QWidget(self.centralwidget)
         self.verticalLayoutWidget.setGeometry(QtCore.QRect(380, 250, 151, 151))
@@ -78,10 +128,23 @@ class Ui_MainWindow(QMainWindow):
         self.verticalLayout.setContentsMargins(0, 0, 0, 0)
         self.verticalLayout.setObjectName("verticalLayout")
 
+        self.Label_copypaste_macros = QtWidgets.QLabel(self.centralwidget)
+        self.Label_copypaste_macros.setGeometry(QtCore.QRect(135, 230, 120, 16))
+        self.Label_copypaste_macros.setAlignment(QtCore.Qt.AlignCenter)
+        self.Label_copypaste_macros.setObjectName("Label_copypaste_macros")
+
+        self.listWidget_macros = QtWidgets.QListWidget(self.centralwidget)
+        self.listWidget_macros.setGeometry(QtCore.QRect(20, 250, 350, 150))
+        self.listWidget_macros.setObjectName("listWidget_macros")
+
+        if proList is not None:
+            self.listWidget_macros.addItem(proList)
+            self.listWidget_macros.setCurrentRow(0)
+
         self.Button_new_macro = QtWidgets.QPushButton(self.verticalLayoutWidget)
         self.Button_new_macro.setObjectName("Button_new_macro")
         self.verticalLayout.addWidget(self.Button_new_macro)
-        self.Button_new_macro.clicked.connect(self.create_new_macro)    # Create new entry in macro list
+        self.Button_new_macro.clicked.connect(self.new_macro)    # Create new entry in macro list
 
         self.Button_edit_macro = QtWidgets.QPushButton(self.verticalLayoutWidget)
         self.Button_edit_macro.setObjectName("Button_edit_macro")
@@ -93,70 +156,10 @@ class Ui_MainWindow(QMainWindow):
         self.verticalLayout.addWidget(self.Button_remove_macro)
         self.Button_remove_macro.clicked.connect(self.remove_macro)    # Remove selected entry in macro list
 
-        self.listWidget_macros = QtWidgets.QListWidget(self.centralwidget)
-        self.listWidget_macros.setGeometry(QtCore.QRect(20, 250, 350, 150))
-        self.listWidget_macros.setObjectName("listWidget_macros")
-
-        self.name = name
-        if proList is not None:
-            self.listWidget_macros.addItem(proList)
-            self.listWidget_macros.setCurrentRow(0)
-
-        self.line = QtWidgets.QFrame(self.centralwidget)
-        self.line.setGeometry(QtCore.QRect(0, 220, 550, 5))
-        self.line.setFrameShape(QtWidgets.QFrame.HLine)
-        self.line.setFrameShadow(QtWidgets.QFrame.Sunken)
-        self.line.setObjectName("line")
-
-        self.Label_rules = QtWidgets.QLabel(self.centralwidget)
-        self.Label_rules.setGeometry(QtCore.QRect(135, 230, 120, 16))
-        self.Label_rules.setAlignment(QtCore.Qt.AlignCenter)
-        self.Label_rules.setObjectName("Label_rules")
-
         self.Button_Run = QtWidgets.QPushButton(self.centralwidget)
         self.Button_Run.setGeometry(QtCore.QRect(120, 410, 311, 51))
         self.Button_Run.setObjectName("Button_Run")
         self.Button_Run.clicked.connect(self.run)
-
-        self.file_import_frame = QtWidgets.QFrame(self.centralwidget)
-        self.file_import_frame.setGeometry(QtCore.QRect(20, 100, 511, 100))
-        self.file_import_frame.setFrameShape(QtWidgets.QFrame.StyledPanel)
-        self.file_import_frame.setFrameShadow(QtWidgets.QFrame.Raised)
-        self.file_import_frame.setObjectName("file_import_frame")
-
-        self.Label_copyfrom = QtWidgets.QLabel(self.file_import_frame)
-        self.Label_copyfrom.setGeometry(QtCore.QRect(10, 10, 79, 35))
-        self.Label_copyfrom.setObjectName("Label_copyfrom")
-
-        self.Label_destination = QtWidgets.QLabel(self.file_import_frame)
-        self.Label_destination.setGeometry(QtCore.QRect(10, 50, 71, 31))
-        self.Label_destination.setObjectName("Label_destination")
-
-        self.Button_browse_copyfrom = QtWidgets.QPushButton(self.file_import_frame)
-        self.Button_browse_copyfrom.setGeometry(QtCore.QRect(410, 10, 91, 41))
-        self.Button_browse_copyfrom.setObjectName("Button_browse_copyfrom")
-        self.Button_browse_copyfrom.clicked.connect(lambda: self.open_excel_file(self.textEdit_copyfrom))  # Added by me (browse func for copy file)
-
-        self.Button_browse_destination = QtWidgets.QPushButton(self.file_import_frame)
-        self.Button_browse_destination.setGeometry(QtCore.QRect(410, 50, 91, 41))
-        self.Button_browse_destination.setObjectName("Button_browse_destination")
-        self.Button_browse_destination.clicked.connect(lambda: self.open_excel_file(self.textEdit_destination))  # Added by me (browse func for destination file)
-
-        self.textEdit_copyfrom = FileEdit(self.file_import_frame)
-        self.textEdit_copyfrom.setGeometry(QtCore.QRect(90, 20, 319, 21))
-        self.textEdit_copyfrom.setObjectName("textEdit_copyfrom")
-
-        self.textEdit_destination = FileEdit(self.file_import_frame)
-        self.textEdit_destination.setGeometry(QtCore.QRect(90, 60, 319, 21))
-        self.textEdit_destination.setObjectName("textEdit_destination")
-
-        self.label_select_excel_files = QtWidgets.QLabel(self.centralwidget)
-        self.label_select_excel_files.setGeometry(QtCore.QRect(210, 70, 131, 21))
-        font = QtGui.QFont()
-        font.setPointSize(14)
-        self.label_select_excel_files.setFont(font)
-        self.label_select_excel_files.setAlignment(QtCore.Qt.AlignCenter)
-        self.label_select_excel_files.setObjectName("label_select_excel_files")
 
         MainWindow.setCentralWidget(self.centralwidget)
         self.menubar = QtWidgets.QMenuBar(MainWindow)
@@ -179,7 +182,7 @@ class Ui_MainWindow(QMainWindow):
         self.Button_edit_macro.setText(_translate("MainWindow", "Edit"))
         self.Button_remove_macro.setText(_translate("MainWindow", "Remove"))
         self.listWidget_macros.setSortingEnabled(False)
-        self.Label_rules.setText(_translate("MainWindow", "Copy/Paste Macros"))
+        self.Label_copypaste_macros.setText(_translate("MainWindow", "Copy/Paste Macros"))
         self.Button_Run.setText(_translate("MainWindow", "RUN"))
         self.Label_copyfrom.setText(_translate("MainWindow", "Copy From:"))
         self.Label_destination.setText(_translate("MainWindow", "Destination:"))
@@ -198,16 +201,19 @@ class Ui_MainWindow(QMainWindow):
                 text = file.name  # << Saves file PATH to textEdit next to it
                 textEdit.setText(text)
 
-    def create_new_macro(self):
-        # self.listWidget_macros.addItem("Added new Macro")
-        row = self.listWidget_macros.currentRow()
-        title, label = "Add Macro", "Macro Name:"
-        text, ok = QInputDialog.getText(self, title, label)  # << Conventional syntax for QInputDialog.getText()
-        # 'QInputDialog.getText' -> (str, bool)
-        # 'text' is text I/O. 'ok' == True if user pressed "ok" button in the popup input dialog
+    def new_macro(self):
+        macros_dialog = Ui_Macro_Dialog()
+        macros_dialog.show()
 
-        if ok and text is not None:  # If user entered input and pressed ok:
-            self.listWidget_macros.insertItem(row, text)  # Add new item to table
+        # # self.listWidget_macros.addItem("Added new Macro")
+        # row = self.listWidget_macros.currentRow()
+        # title, label = "Add Macro", "Macro Name:"
+        # text, ok = QInputDialog.getText(self, title, label)  # << Conventional syntax for QInputDialog.getText()
+        # # 'QInputDialog.getText' -> (str, bool)
+        # # 'text' is text I/O. 'ok' == True if user pressed "ok" button in the popup input dialog
+        #
+        # if ok and text is not None:  # If user entered input and pressed ok:
+        #     self.listWidget_macros.insertItem(row, text)  # Add new item to table
 
     def edit_macro(self):
         row = self.listWidget_macros.currentRow()  # get currently selected row idx
