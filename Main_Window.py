@@ -60,12 +60,12 @@ class FileEdit(QLineEdit):
 
 
 class Ui_MainWindow(QMainWindow):
-    def __init__(self, proList=None):
+    def __init__(self):
         super(Ui_MainWindow, self).__init__()
         self.initUI(MainWindow)
 
 
-    def initUI(self, MainWindow, proList=None):
+    def initUI(self, MainWindow):
         sqlhelper = SqliteHelper("Macros_db")  # Create db/tables if it doesn't exist yet
         sqlhelper.create_table()
 
@@ -128,18 +128,19 @@ class Ui_MainWindow(QMainWindow):
         self.verticalLayout.setContentsMargins(0, 0, 0, 0)
         self.verticalLayout.setObjectName("verticalLayout")
 
-        self.Label_copypaste_macros = QtWidgets.QLabel(self.centralwidget)
-        self.Label_copypaste_macros.setGeometry(QtCore.QRect(135, 230, 120, 16))
-        self.Label_copypaste_macros.setAlignment(QtCore.Qt.AlignCenter)
-        self.Label_copypaste_macros.setObjectName("Label_copypaste_macros")
+        self.Label_macros = QtWidgets.QLabel(self.centralwidget)
+        self.Label_macros.setGeometry(QtCore.QRect(135, 230, 120, 16))
+        self.Label_macros.setAlignment(QtCore.Qt.AlignCenter)
+        self.Label_macros.setObjectName("Label_macros")
 
         self.listWidget_macros = QtWidgets.QListWidget(self.centralwidget)
         self.listWidget_macros.setGeometry(QtCore.QRect(20, 250, 350, 150))
         self.listWidget_macros.setObjectName("listWidget_macros")
 
-        if proList is not None:
-            self.listWidget_macros.addItem(proList)
-            self.listWidget_macros.setCurrentRow(0)
+
+        # ADD REFRESH LIST HERE?
+        self.refresh()  # << Fill listtable with macro title data from db
+
 
         self.Button_new_macro = QtWidgets.QPushButton(self.verticalLayoutWidget)
         self.Button_new_macro.setObjectName("Button_new_macro")
@@ -159,7 +160,7 @@ class Ui_MainWindow(QMainWindow):
         self.Button_Run = QtWidgets.QPushButton(self.centralwidget)
         self.Button_Run.setGeometry(QtCore.QRect(120, 410, 311, 51))
         self.Button_Run.setObjectName("Button_Run")
-        self.Button_Run.clicked.connect(self.run)
+        self.Button_Run.clicked.connect(self.refresh)
 
         MainWindow.setCentralWidget(self.centralwidget)
         self.menubar = QtWidgets.QMenuBar(MainWindow)
@@ -182,13 +183,37 @@ class Ui_MainWindow(QMainWindow):
         self.Button_edit_macro.setText(_translate("MainWindow", "Edit"))
         self.Button_remove_macro.setText(_translate("MainWindow", "Remove"))
         self.listWidget_macros.setSortingEnabled(False)
-        self.Label_copypaste_macros.setText(_translate("MainWindow", "Copy/Paste Macros"))
+        self.Label_macros.setText(_translate("MainWindow", "Macros"))
         self.Button_Run.setText(_translate("MainWindow", "RUN"))
         self.Label_copyfrom.setText(_translate("MainWindow", "Copy From:"))
         self.Label_destination.setText(_translate("MainWindow", "Destination:"))
         self.Button_browse_destination.setText(_translate("MainWindow", "Browse"))
         self.Button_browse_copyfrom.setText(_translate("MainWindow", "Browse"))
         self.label_select_excel_files.setText(_translate("MainWindow", "Select  Excel  Files"))
+
+    def refresh(self):
+        """ Refresh Macros """
+        # If db is not None:
+        sqlhelper = SqliteHelper("Macros_db")
+
+        if sqlhelper:
+            self.listWidget_macros.clear()
+
+            data = sqlhelper.load_table("Macros")  # == (id, title, description)
+
+            for macro in data:
+                print(macro)
+                self.listWidget_macros.addItem(macro[1])
+                # self.listWidget_macros.setCurrentRow(0)
+
+    def _add_table(self, columns):
+        pass
+        # row_pos = self.listWidget_macros.count()
+        # last_row = self.listWidget_macros.
+        # self.listWidget_macros.insertItem()
+        #
+        # for i, col in enumerate(columns):
+        #     self.listWidget_macros.setitem
 
     def open_excel_file(self, textEdit):
         """ open file browser and get path to designated copy or destination file """
@@ -243,9 +268,6 @@ class Ui_MainWindow(QMainWindow):
     def sort(self):
         self.listWidget_macros.sortItems()
 
-    def close(self):
-        self.close()
-
     def run(self):
         """  """
         copy_wb_path = self.textEdit_copyfrom.text()
@@ -266,4 +288,5 @@ if __name__ == "__main__":
 
 # ----------- TEST ----------
 
+# open_excel_file()
 

@@ -24,11 +24,11 @@ class Ui_Macro_Dialog(QDialog):
         self.macro_title.setGeometry(QtCore.QRect(100, 20, 400, 30))
         self.macro_title.setMaxLength(75)
         self.macro_title.setAlignment(QtCore.Qt.AlignCenter)
-        self.macro_title.setObjectName("lineEdit_macro_title")
+        self.macro_title.setObjectName("macro_title")
 
         self.macro_description = QtWidgets.QTextEdit(Macro_Dialog)
         self.macro_description.setGeometry(QtCore.QRect(20, 70, 560, 100))
-        self.macro_description.setObjectName("textEdit_macro_description")
+        self.macro_description.setObjectName("macro_description")
 
         self.Label_sheets = QtWidgets.QLabel(Macro_Dialog)
         self.Label_sheets.setGeometry(QtCore.QRect(45, 210, 210, 20))
@@ -42,43 +42,27 @@ class Ui_Macro_Dialog(QDialog):
 
         self.tableWidget_sheets = QtWidgets.QTableWidget(Macro_Dialog)
         self.tableWidget_sheets.setGeometry(QtCore.QRect(45, 240, 218, 320))
-        # self.tableWidget_sheets.setDragEnabled(True)
-        # self.tableWidget_sheets.setDragDropMode(QtWidgets.QAbstractItemView.DragDrop)
         self.tableWidget_sheets.setEditTriggers(QtWidgets.QAbstractItemView.DoubleClicked | QtWidgets.QAbstractItemView.AnyKeyPressed)
         self.tableWidget_sheets.setSelectionBehavior(QtWidgets.QAbstractItemView.SelectRows)
         self.tableWidget_sheets.setColumnCount(2)
         self.tableWidget_sheets.setObjectName("tableWidget_sheets")
         self.tableWidget_sheets.setRowCount(0)  # << Set to 0 myself. Use commented code later if needed
-        # item = QtWidgets.QTableWidgetItem()
-        # self.tableWidget_sheets.setVerticalHeaderItem(0, item)
         item = QtWidgets.QTableWidgetItem()
         self.tableWidget_sheets.setHorizontalHeaderItem(0, item)
         item = QtWidgets.QTableWidgetItem()
         self.tableWidget_sheets.setHorizontalHeaderItem(1, item)
-        # item = QtWidgets.QTableWidgetItem()
-        # self.tableWidget_sheets.setItem(0, 0, item)
-        # item = QtWidgets.QTableWidgetItem()
-        # self.tableWidget_sheets.setItem(0, 1, item)
 
         self.tableWidget_cells = QtWidgets.QTableWidget(Macro_Dialog)
         self.tableWidget_cells.setGeometry(QtCore.QRect(345, 240, 218, 320))
-        # self.tableWidget_cells.setDragEnabled(True)
-        # self.tableWidget_cells.setDragDropMode(QtWidgets.QAbstractItemView.DragDrop)
         self.tableWidget_cells.setEditTriggers(QtWidgets.QAbstractItemView.DoubleClicked | QtWidgets.QAbstractItemView.AnyKeyPressed)
         self.tableWidget_cells.setSelectionBehavior(QtWidgets.QAbstractItemView.SelectRows)
         self.tableWidget_cells.setObjectName("tableWidget_cell_entries")
         self.tableWidget_cells.setColumnCount(2)
         self.tableWidget_cells.setRowCount(0)  # << Set to 0 myself. Use commented code later if needed
-        # item = QtWidgets.QTableWidgetItem()
-        # self.tableWidget_cell_entries.setVerticalHeaderItem(0, item)
         item = QtWidgets.QTableWidgetItem()
         self.tableWidget_cells.setHorizontalHeaderItem(0, item)
         item = QtWidgets.QTableWidgetItem()
         self.tableWidget_cells.setHorizontalHeaderItem(1, item)
-        # item = QtWidgets.QTableWidgetItem()
-        # self.tableWidget_cell_entries.setItem(0, 0, item)
-        # item = QtWidgets.QTableWidgetItem()
-        # self.tableWidget_cell_entries.setItem(0, 1, item)
 
         self.Button_del_sheets = QtWidgets.QPushButton(Macro_Dialog)
         self.Button_del_sheets.setGeometry(QtCore.QRect(90, 570, 50, 30))
@@ -151,6 +135,9 @@ class Ui_Macro_Dialog(QDialog):
         self.tableWidget_cells.setSortingEnabled(False)
         self.tableWidget_cells.setSortingEnabled(__sortingEnabled)
 
+
+
+
     def add_row(self, TableWidget):
         rowPosition = TableWidget.rowCount()
         TableWidget.insertRow(rowPosition)
@@ -183,10 +170,11 @@ class Ui_Macro_Dialog(QDialog):
         #         item = TableWidget.takeItem(row) # <<<
         #         del item
 
-    def save_macro(self):  # << Add func to save to sqlite !!!!!!
+    def save_macro(self):
+        """ When 'save' button is clicked: Add/Update Macros window's inputs to DB """
         title = self.macro_title.text()
         description = self.macro_description.toPlainText()
-        sheets = [self.tableWidget_sheets.items()]
+        # sheets = [self.tableWidget_sheets.items()]
 
         add_macros_sql = ''' INSERT INTO Macros (title,description)
                       VALUES(?,?) '''  # The '?'s will be filled with 'data_to_insert'
@@ -207,12 +195,11 @@ class Ui_Macro_Dialog(QDialog):
         self.close()
 
     def new_dialog(self, conn):
-        """ To be used when 'save' button is pressed """
-        sqlhelper = SqliteHelper("Macros_db")
-
-        if conn is not None:
-            macro_data = (self.macro_title, self.macro_description)
-            macro_id = sqlhelper.insert(add_macros_sql, macro_data)
+        # sqlhelper = SqliteHelper("Macros_db")
+        #
+        # if conn is not None:
+        #     macro_data = (self.macro_title, self.macro_description)
+        #     macro_id = sqlhelper.insert(add_macros_sql, macro_data)
 
             # sheet_data = ()
             # sheet_id = _add_item(conn, sheet_data, add_sheets_sql)
@@ -220,8 +207,9 @@ class Ui_Macro_Dialog(QDialog):
             # cell_data = ()
             # _add_item(conn, cell_data, add_cells_sql)
 
-        else:
-            print("Error! can't create db connection")
+        # else:
+        #     print("Error! can't create db connection")
+        pass
 
 
 

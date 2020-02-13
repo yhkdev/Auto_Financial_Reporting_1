@@ -74,6 +74,13 @@ class SqliteHelper:
         c.execute(query)
         return c.fetchall()
 
+    def load_table(self, tablename):
+        c = self.cursor
+        rows = c.execute("SELECT * from " + tablename)  # << Important for fetching from a select table
+        data = c.fetchall()
+        return data
+
+
 
 
 # test = SqliteHelper("test.db")
