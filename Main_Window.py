@@ -188,7 +188,7 @@ class Ui_MainWindow(QMainWindow):
         self.Button_Run = QtWidgets.QPushButton(self.centralwidget)
         self.Button_Run.setGeometry(QtCore.QRect(120, 410, 311, 51))
         self.Button_Run.setObjectName("Button_Run")
-        self.Button_Run.clicked.connect(self.refresh)
+        # self.Button_Run.clicked.connect(self.refresh)
 
         MainWindow.setCentralWidget(self.centralwidget)
         self.menubar = QtWidgets.QMenuBar(MainWindow)
@@ -234,43 +234,24 @@ class Ui_MainWindow(QMainWindow):
             if self.model.insertRecord(self.model.rowCount(), r):
                 self.model.select()
 
-        # macros_dialog = Macro_Dialog()
-        # macros_dialog.show()
-        #
-        # # # self.tableWidget_macros.addItem("Added new Macro")
-        # # row = self.tableWidget_macros.currentRow()
-        # # title, label = "Add Macro", "Macro Name:"
-        # # text, ok = QInputDialog.getText(self, title, label)  # << Conventional syntax for QInputDialog.getText()
-        # # # 'QInputDialog.getText' -> (str, bool)
-        # # # 'text' is text I/O. 'ok' == True if user pressed "ok" button in the popup input dialog
-        # #
-        # # if ok and text is not None:  # If user entered input and pressed ok:
-        # #     self.tableWidget_macros.insertItem(row, text)  # Add new item to table
-
+    @QtCore.pyqtSlot()
     def edit_macro(self):
-        row = self.listView_macros.currentRow()  # get currently selected row idx
-        item = self.listView_macros.item(row)  # Get row item at currently selected row
+        pass
+        # ixs = self.listView_macros.selectionModel().selectedIndexes()
+        # if ixs:
+        #     d = Macro_Dialog(self.model, ixs[0].row())
+        #     d.exec_()
 
-        if item is not None:
-            title = "Edit Macro: '{0}'".format(str(item.text()))
-            text, ok = QInputDialog.getText(self, title, title,
-                                              QLineEdit.Normal, item.text())
-            if ok and text is not None:
-                item.setText(text)  # Edit
-
+    @QtCore.pyqtSlot()
     def remove_macro(self):
-        row = self.listView_macros.currentRow()
-        item = self.listView_macros.item(row)
-
-        if item:
-
+        ixs = self.listView_macros.selectionModel().selectedIndexes()
+        if ixs:
             reply = QMessageBox.warning(self, "Remove Macro?",
-                                         "Remove Macro '{0}'?".format(str(item.text())),
-                                         QMessageBox.Yes | QMessageBox.No)
-
+                                        "Remove Macro?",
+                                        QMessageBox.Yes | QMessageBox.No)
             if reply == QMessageBox.Yes:
-                item = self.listView_macros.takeItem(row)
-                del item
+                self.model.removeRow(ixs[0].row())
+                self.model.select()
 
 
 
