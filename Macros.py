@@ -9,8 +9,6 @@
 from PyQt5 import QtCore, QtGui, QtWidgets
 from PyQt5.QtWidgets import QFileDialog, QDialog, QMessageBox, QLineEdit
 
-from SqliteHelper import SqliteHelper
-
 class Ui_Macro_Dialog(QDialog):
     def __init__(self):
         super(Ui_Macro_Dialog, self).__init__()
@@ -97,7 +95,7 @@ class Ui_Macro_Dialog(QDialog):
         self.Button_save = QtWidgets.QPushButton(Macro_Dialog)
         self.Button_save.setGeometry(QtCore.QRect(310, 630, 100, 30))
         self.Button_save.setObjectName("Button_save")
-        self.Button_save.clicked.connect(self.save_macro)  # << Save/Update Dialog to sqlite
+        self.Button_save.clicked.connect(self.accept)  # << Save/Update Dialog to sqlite
 
 
         self.retranslateUi(Macro_Dialog)
@@ -136,6 +134,30 @@ class Ui_Macro_Dialog(QDialog):
         self.tableWidget_cells.setSortingEnabled(__sortingEnabled)
 
 
+    @property
+    def title(self):
+        return self.macro_title.text()
+
+    @property
+    def description(self):
+        return self.macro_description.toPlainText()
+
+    # def save_macro(self):
+    #     """ When 'save' button is clicked: Add/Update Macros window's inputs to DB """
+    #     title = self.macro_title.text()
+    #     description = self.macro_description.toPlainText()
+    #     # sheets = [self.tableWidget_sheets.items()]
+    #
+
+        # add_macros_sql = ''' INSERT INTO Macros (title,description)
+        #               VALUES(?,?) '''  # The '?'s will be filled with 'data_to_insert'
+
+        # add_sheets_sql = ''' INSERT INTO Sheets (macroid, copy_sheet, paste_sheet)
+        #           VALUES(?,?,?,?) '''
+
+        # add_cells_sql = ''' INSERT INTO Cells (sheetid, copy_cell, paste_cell)
+        #           VALUES(?,?,?) '''  # The '?'s will be filled with 'data_to_insert'
+
 
 
     def add_row(self, TableWidget):
@@ -170,29 +192,6 @@ class Ui_Macro_Dialog(QDialog):
         #         item = TableWidget.takeItem(row) # <<<
         #         del item
 
-    def save_macro(self):
-        """ When 'save' button is clicked: Add/Update Macros window's inputs to DB """
-        title = self.macro_title.text()
-        description = self.macro_description.toPlainText()
-        # sheets = [self.tableWidget_sheets.items()]
-
-        add_macros_sql = ''' INSERT INTO Macros (title,description)
-                      VALUES(?,?) '''  # The '?'s will be filled with 'data_to_insert'
-
-        # add_sheets_sql = ''' INSERT INTO Sheets (macroid, copy_sheet, paste_sheet)
-        #           VALUES(?,?,?,?) '''
-
-        # add_cells_sql = ''' INSERT INTO Cells (sheetid, copy_cell, paste_cell)
-        #           VALUES(?,?,?) '''  # The '?'s will be filled with 'data_to_insert'
-
-        sqlhelper = SqliteHelper("Macros_db")
-
-        if sqlhelper is not None:  # If db is connected:
-            macro_data = (title, description)
-            sqlhelper.insert(add_macros_sql, macro_data)
-            # macro_id = sqlhelper.insert(add_macros_sql, macro_data)
-
-        self.close()
 
     def new_dialog(self, conn):
         # sqlhelper = SqliteHelper("Macros_db")

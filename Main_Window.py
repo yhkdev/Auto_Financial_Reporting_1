@@ -6,17 +6,42 @@
 #
 # WARNING! All changes made in this file will be lost!
 
-from PyQt5 import QtCore, QtGui, QtWidgets
+from PyQt5 import QtCore, QtGui, QtWidgets, QtSql
 from PyQt5.QtWidgets import QMainWindow, QFileDialog, QDialog, QInputDialog, QMessageBox, QLineEdit
 from PyQt5.QtGui import QIcon
 
 import sqlite3
 
 from CopyPasteExcel import copy_paste
-from Macros import Ui_Macro_Dialog
-from SqliteHelper import SqliteHelper
+from Macros import Ui_Macro_Dialog as Macro_Dialog
 
 import os
+
+def create_connection(database):
+    db = QtSql.QSqlDatabase.addDatabase("QSQLITE")
+    db.setDatabaseName(database)
+    if not db.open():
+        print("Cannot open database")
+        print(
+            "Unable to establish a database connection.\n"
+            "This example needs SQLite support. Please read "
+            "the Qt SQL driver documentation for information "
+            "how to build it.\n\n"
+            "Click Cancel to exit."
+        )
+        return False
+
+    query = QtSql.QSqlQuery()
+    if not query.exec_(
+        """CREATE TABLE IF NOT EXISTS Macros (
+    "id" INTEGER PRIMARY KEY AUTOINCREMENT,
+    "title" TEXT NOT NULL,
+    "description" TEXT)"""
+    ):
+        print(query.lastError().text())
+        return False
+    return True
+
 
 
 class FileEdit(QLineEdit):
@@ -60,14 +85,13 @@ class FileEdit(QLineEdit):
 
 
 class Ui_MainWindow(QMainWindow):
-    def __init__(self):
-        super(Ui_MainWindow, self).__init__()
+
+    def __init__(self, parent=None):
+        super(Ui_MainWindow, self).__init__(parent)
         self.initUI(MainWindow)
 
 
     def initUI(self, MainWindow):
-        sqlhelper = SqliteHelper("Macros_db")  # Create db/tables if it doesn't exist yet
-        sqlhelper.create_table()
 
         MainWindow.setObjectName("MainWindow")
         MainWindow.resize(550, 500)
@@ -120,6 +144,9 @@ class Ui_MainWindow(QMainWindow):
         self.line.setFrameShadow(QtWidgets.QFrame.Sunken)
         self.line.setObjectName("line")
 
+
+
+
         self.verticalLayoutWidget = QtWidgets.QWidget(self.centralwidget)
         self.verticalLayoutWidget.setGeometry(QtCore.QRect(380, 250, 151, 151))
         self.verticalLayoutWidget.setObjectName("verticalLayoutWidget")
@@ -133,14 +160,15 @@ class Ui_MainWindow(QMainWindow):
         self.Label_macros.setAlignment(QtCore.Qt.AlignCenter)
         self.Label_macros.setObjectName("Label_macros")
 
-        self.listWidget_macros = QtWidgets.QListWidget(self.centralwidget)
-        self.listWidget_macros.setGeometry(QtCore.QRect(20, 250, 350, 150))
-        self.listWidget_macros.setObjectName("listWidget_macros")
+        self._model = QtSql.QSqlTableModel(MainWindow)  # Added SQL Table model
+        self.model.setTable("Macros")
+        self.model.select()
 
-
-        # ADD REFRESH LIST HERE?
-        self.refresh()  # << Fill listtable with macro title data from db
-
+        self.listView_macros = QtWidgets.QListView(self.centralwidget)
+        self.listView_macros.setGeometry(QtCore.QRect(20, 250, 350, 150))
+        self.listView_macros.setObjectName("tableWidget_macros")
+        self.listView_macros.setModel(self.model)
+        self.listView_macros.setModelColumn(self.model.record().indexOf("title"))
 
         self.Button_new_macro = QtWidgets.QPushButton(self.verticalLayoutWidget)
         self.Button_new_macro.setObjectName("Button_new_macro")
@@ -182,7 +210,7 @@ class Ui_MainWindow(QMainWindow):
         self.Button_new_macro.setText(_translate("MainWindow", "New"))
         self.Button_edit_macro.setText(_translate("MainWindow", "Edit"))
         self.Button_remove_macro.setText(_translate("MainWindow", "Remove"))
-        self.listWidget_macros.setSortingEnabled(False)
+        # self.listView_macros.setSortingEnabled(False)
         self.Label_macros.setText(_translate("MainWindow", "Macros"))
         self.Button_Run.setText(_translate("MainWindow", "RUN"))
         self.Label_copyfrom.setText(_translate("MainWindow", "Copy From:"))
@@ -191,29 +219,71 @@ class Ui_MainWindow(QMainWindow):
         self.Button_browse_copyfrom.setText(_translate("MainWindow", "Browse"))
         self.label_select_excel_files.setText(_translate("MainWindow", "Select  Excel  Files"))
 
-    def refresh(self):
-        """ Refresh Macros """
-        # If db is not None:
-        sqlhelper = SqliteHelper("Macros_db")
+    @property
+    def model(self):
+        return self._model
 
-        if sqlhelper:
-            self.listWidget_macros.clear()
+    @QtCore.pyqtSlot()
+    def new_macro(self):
 
-            data = sqlhelper.load_table("Macros")  # == (id, title, description)
+        d = Macro_Dialog()
+        if d.exec_() == QtWidgets.QDialog.Accepted:
+            r = self.model.record()
+            r.setValue("title", d.title)
+            r.setValue("description", d.description)
+            if self.model.insertRecord(self.model.rowCount(), r):
+                self.model.select()
 
-            for macro in data:
-                print(macro)
-                self.listWidget_macros.addItem(macro[1])
-                # self.listWidget_macros.setCurrentRow(0)
+        # macros_dialog = Macro_Dialog()
+        # macros_dialog.show()
+        #
+        # # # self.tableWidget_macros.addItem("Added new Macro")
+        # # row = self.tableWidget_macros.currentRow()
+        # # title, label = "Add Macro", "Macro Name:"
+        # # text, ok = QInputDialog.getText(self, title, label)  # << Conventional syntax for QInputDialog.getText()
+        # # # 'QInputDialog.getText' -> (str, bool)
+        # # # 'text' is text I/O. 'ok' == True if user pressed "ok" button in the popup input dialog
+        # #
+        # # if ok and text is not None:  # If user entered input and pressed ok:
+        # #     self.tableWidget_macros.insertItem(row, text)  # Add new item to table
+
+    def edit_macro(self):
+        row = self.listView_macros.currentRow()  # get currently selected row idx
+        item = self.listView_macros.item(row)  # Get row item at currently selected row
+
+        if item is not None:
+            title = "Edit Macro: '{0}'".format(str(item.text()))
+            text, ok = QInputDialog.getText(self, title, title,
+                                              QLineEdit.Normal, item.text())
+            if ok and text is not None:
+                item.setText(text)  # Edit
+
+    def remove_macro(self):
+        row = self.listView_macros.currentRow()
+        item = self.listView_macros.item(row)
+
+        if item:
+
+            reply = QMessageBox.warning(self, "Remove Macro?",
+                                         "Remove Macro '{0}'?".format(str(item.text())),
+                                         QMessageBox.Yes | QMessageBox.No)
+
+            if reply == QMessageBox.Yes:
+                item = self.listView_macros.takeItem(row)
+                del item
+
+
 
     def _add_table(self, columns):
         pass
-        # row_pos = self.listWidget_macros.count()
-        # last_row = self.listWidget_macros.
-        # self.listWidget_macros.insertItem()
+        # row_pos = self.tableWidget_macros.count()
+        # last_row = self.tableWidget_macros.
+        # self.tableWidget_macros.insertItem()
         #
         # for i, col in enumerate(columns):
-        #     self.listWidget_macros.setitem
+        #     self.tableWidget_macros.setitem
+
+
 
     def open_excel_file(self, textEdit):
         """ open file browser and get path to designated copy or destination file """
@@ -226,48 +296,6 @@ class Ui_MainWindow(QMainWindow):
                 text = file.name  # << Saves file PATH to textEdit next to it
                 textEdit.setText(text)
 
-    def new_macro(self):
-        macros_dialog = Ui_Macro_Dialog()
-        macros_dialog.show()
-
-        # # self.listWidget_macros.addItem("Added new Macro")
-        # row = self.listWidget_macros.currentRow()
-        # title, label = "Add Macro", "Macro Name:"
-        # text, ok = QInputDialog.getText(self, title, label)  # << Conventional syntax for QInputDialog.getText()
-        # # 'QInputDialog.getText' -> (str, bool)
-        # # 'text' is text I/O. 'ok' == True if user pressed "ok" button in the popup input dialog
-        #
-        # if ok and text is not None:  # If user entered input and pressed ok:
-        #     self.listWidget_macros.insertItem(row, text)  # Add new item to table
-
-    def edit_macro(self):
-        row = self.listWidget_macros.currentRow()  # get currently selected row idx
-        item = self.listWidget_macros.item(row)  # Get row item at currently selected row
-
-        if item is not None:
-            title = "Edit Macro: '{0}'".format(str(item.text()))
-            text, ok = QInputDialog.getText(self, title, title,
-                                              QLineEdit.Normal, item.text())
-            if ok and text is not None:
-                item.setText(text)  # Edit
-
-    def remove_macro(self):
-        row = self.listWidget_macros.currentRow()
-        item = self.listWidget_macros.item(row)
-
-        if item:
-
-            reply = QMessageBox.warning(self, "Remove Macro?",
-                                         "Remove Macro '{0}'?".format(str(item.text())),
-                                         QMessageBox.Yes | QMessageBox.No)
-
-            if reply == QMessageBox.Yes:
-                item = self.listWidget_macros.takeItem(row)
-                del item
-
-    def sort(self):
-        self.listWidget_macros.sortItems()
-
     def run(self):
         """  """
         copy_wb_path = self.textEdit_copyfrom.text()
@@ -277,9 +305,15 @@ class Ui_MainWindow(QMainWindow):
 
 
 
+
+
+
 if __name__ == "__main__":
     import sys
+    database_name = "Macros_db"  # ":memory:"
     app = QtWidgets.QApplication(sys.argv)
+    if not create_connection(database_name):
+        sys.exit(app.exec_())
     MainWindow = QtWidgets.QMainWindow()
     ui = Ui_MainWindow()
     ui.initUI(MainWindow)
