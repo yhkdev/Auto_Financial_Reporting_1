@@ -10,8 +10,10 @@ from PyQt5 import QtCore, QtGui, QtWidgets
 from PyQt5.QtWidgets import QFileDialog, QDialog, QMessageBox, QLineEdit
 
 class Ui_Macro_Dialog(QDialog):
-    def __init__(self):
+    def __init__(self, model=None, index=None):
         super(Ui_Macro_Dialog, self).__init__()
+        self.model = model
+        self.index = index
         self.initUI(self)
 
     def initUI(self, Macro_Dialog):
@@ -62,6 +64,15 @@ class Ui_Macro_Dialog(QDialog):
         item = QtWidgets.QTableWidgetItem()
         self.tableWidget_cells.setHorizontalHeaderItem(1, item)
 
+        if self.model:  # If this window was opened with "Edit" button (Not "New" button)
+            self.mapper = QtWidgets.QDataWidgetMapper(
+                self, submitPolicy=QtWidgets.QDataWidgetMapper.ManualSubmit
+            )
+            self.mapper.setModel(self.model)
+            self.mapper.addMapping(self.macro_title, self.model.record().indexOf("title"))
+            self.mapper.addMapping(self.macro_description, self.model.record().indexOf("description"))
+            self.mapper.setCurrentIndex(self.index)
+
         self.Button_del_sheets = QtWidgets.QPushButton(Macro_Dialog)
         self.Button_del_sheets.setGeometry(QtCore.QRect(90, 570, 50, 30))
         self.Button_del_sheets.setAutoDefault(False)
@@ -96,6 +107,8 @@ class Ui_Macro_Dialog(QDialog):
         self.Button_save.setGeometry(QtCore.QRect(310, 630, 100, 30))
         self.Button_save.setObjectName("Button_save")
         self.Button_save.clicked.connect(self.accept)  # << Save/Update Dialog to sqlite
+        if self.model:
+            self.Button_save.clicked.connect(self.mapper.submit)
 
 
         self.retranslateUi(Macro_Dialog)

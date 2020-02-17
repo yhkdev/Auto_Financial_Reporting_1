@@ -236,11 +236,10 @@ class Ui_MainWindow(QMainWindow):
 
     @QtCore.pyqtSlot()
     def edit_macro(self):
-        pass
-        # ixs = self.listView_macros.selectionModel().selectedIndexes()
-        # if ixs:
-        #     d = Macro_Dialog(self.model, ixs[0].row())
-        #     d.exec_()
+        ixs = self.listView_macros.selectionModel().selectedIndexes()
+        if ixs:
+            d = Macro_Dialog(self.model, ixs[0].row())
+            d.exec_()
 
     @QtCore.pyqtSlot()
     def remove_macro(self):
